@@ -10,7 +10,8 @@ import styled from 'styled-components'
 // @ts-ignore
 // import eve from './models/fbx/eve_j_gonzales.fbx'
 // @ts-ignore
-import kachujin from './models/fbx/kachujin_g_rosales.fbx'
+import kachujin from './models/fbx/sophie_thriller.fbx'
+// import kachujin from './models/fbx/kachujin_g_rosales.fbx'
 // @ts-ignore
 // import sambaDancing from './models/fbx/samba-dancing.fbx'
 
@@ -64,20 +65,23 @@ const App = () => {
 
   let frameId: number
 
+  let mixer: THREE.AnimationMixer
   let renderer: THREE.WebGLRenderer
   let camera: THREE.PerspectiveCamera
   let scene: THREE.Scene
+
+  const clock = new THREE.Clock()
 
   const sceneAdd = (item: THREE.Object3D) => scene.add(item)
 
   const createCam = () => {
     camera = new THREE.PerspectiveCamera(
-      45,
+      75,
       window.innerWidth / window.innerHeight,
       1,
       2000,
     )
-    camera.position.set(100, 200, 300)
+    camera.position.set(0, 200, 600)
   }
 
   const createScene = () => {
@@ -103,13 +107,13 @@ const App = () => {
 
   const createGround = () => {
     let mesh = new THREE.Mesh(
-      new THREE.PlaneBufferGeometry(2000, 2000),
+      new THREE.PlaneBufferGeometry(5000, 2000),
       new THREE.MeshPhongMaterial({
         color: 0x999999,
         depthWrite: false,
       }),
     )
-    mesh.rotation.x = -Math.PI / 2
+    mesh.rotation.x = -Math.PI / 3
     mesh.receiveShadow = true
     sceneAdd(mesh)
 
@@ -139,8 +143,12 @@ const App = () => {
     loader.load(
       kachujin,
       (object: any) => {
-        object.traverse((child: any) => {
-          // @ts-ignore
+        mixer = new THREE.AnimationMixer(object)
+
+        const action = mixer.clipAction(object.animations[0])
+        action.play()
+
+        object.traverse(function (child: any) {
           if (child.isMesh) {
             child.castShadow = true
             child.receiveShadow = true
@@ -168,6 +176,9 @@ const App = () => {
 
   const animate = () => {
     frameId = requestAnimationFrame(animate)
+
+    const delta = clock.getDelta()
+    if (mixer) mixer.update(delta)
 
     renderer.render(scene, camera)
   }
