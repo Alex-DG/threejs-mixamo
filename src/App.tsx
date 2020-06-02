@@ -62,6 +62,8 @@ const App = () => {
     current: { clientWidth: 0, clientHeight: 0 },
   })
 
+  let frameId: number
+
   let renderer: THREE.WebGLRenderer
   let camera: THREE.PerspectiveCamera
   let scene: THREE.Scene
@@ -119,6 +121,13 @@ const App = () => {
     sceneAdd(grid)
   }
 
+  const onWindowResize = () => {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+
+    renderer.setSize(window.innerWidth, window.innerHeight)
+  }
+
   const init = () => {
     createCam()
     createScene()
@@ -153,10 +162,12 @@ const App = () => {
     renderer.setPixelRatio(window.devicePixelRatio)
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.shadowMap.enabled = true
+
+    window.addEventListener('resize', onWindowResize, false)
   }
 
   const animate = () => {
-    requestAnimationFrame(animate)
+    frameId = requestAnimationFrame(animate)
 
     renderer.render(scene, camera)
   }
@@ -165,6 +176,11 @@ const App = () => {
     () => {
       init()
       animate()
+
+      return () => {
+        cancelAnimationFrame(frameId)
+        window.removeEventListener('resize', onWindowResize)
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
