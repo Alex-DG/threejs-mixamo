@@ -8,12 +8,7 @@ import * as THREE from 'three'
 import styled from 'styled-components'
 
 // @ts-ignore
-// import eve from './models/fbx/eve_j_gonzales.fbx'
-// @ts-ignore
-import kachujin from './models/fbx/sophie_thriller.fbx'
-// import kachujin from './models/fbx/kachujin_g_rosales.fbx'
-// @ts-ignore
-// import sambaDancing from './models/fbx/samba-dancing.fbx'
+import michelle from './models/fbx/michelle_look_around.fbx'
 
 const LoadingWrapper = styled.div`
   min-height: 100vh;
@@ -81,7 +76,7 @@ const App = () => {
       1,
       2000,
     )
-    camera.position.set(0, 200, 600)
+    camera.position.set(0, 110, 230)
   }
 
   const createScene = () => {
@@ -141,7 +136,7 @@ const App = () => {
     const loader = new FBXLoader()
 
     loader.load(
-      kachujin,
+      michelle,
       (object: any) => {
         mixer = new THREE.AnimationMixer(object)
 
