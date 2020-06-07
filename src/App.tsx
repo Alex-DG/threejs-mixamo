@@ -5,52 +5,22 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 
 import * as THREE from 'three'
 
-import styled from 'styled-components'
+import FBXAnims, { animationKeys } from './animations'
 
-// @ts-ignore
-import michelle from './models/fbx/michelle_look_around.fbx'
+import {
+  LoadingWrapper,
+  LoadingText,
+  LoadingContainer,
+  StyledCanvas,
+} from './styles'
 
-const LoadingWrapper = styled.div`
-  min-height: 100vh;
-
-  background-color: transparent;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`
-
-const LoadingText = styled.h1`
-  color: white;
-`
-
-const LoadingContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 200px;
-  padding: 15px;
-
-  position: relative;
-
-  background-color: grey;
-
-  border-radius: 4px;
-
-  margin: 0 auto;
-
-  z-index: 0;
-`
-
-const StyledCanvas = styled.canvas`
-  position: absolute;
-  z-index: -1;
-  min-height: 100vh;
-
-  background-color: transparent;
-`
+import Player from './models/Player'
 
 const App = () => {
+  const player = new Player()
+
+  let anims = [...animationKeys]
+
   const [loading, setLoading] = useState(true)
 
   const canvasRef = useRef<HTMLCanvasElement>({
@@ -60,7 +30,6 @@ const App = () => {
 
   let frameId: number
 
-  let mixer: THREE.AnimationMixer
   let renderer: THREE.WebGLRenderer
   let camera: THREE.PerspectiveCamera
   let scene: THREE.Scene
@@ -86,11 +55,11 @@ const App = () => {
   }
 
   const createLight = () => {
-    let hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444)
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444)
     hemisphereLight.position.set(0, 200, 0)
     sceneAdd(hemisphereLight)
 
-    let directionalLight = new THREE.DirectionalLight(0xffffff)
+    const directionalLight = new THREE.DirectionalLight(0xffffff)
     directionalLight.position.set(0, 200, 100)
     directionalLight.castShadow = true
     directionalLight.shadow.camera.top = 180
@@ -127,6 +96,24 @@ const App = () => {
     renderer.setSize(window.innerWidth, window.innerHeight)
   }
 
+  const loadNextAnim = (loader: FBXLoader) => {
+    const name = anims.pop() || ''
+    const anim = FBXAnims[name] // Animation to load
+
+    if (anim) {
+      loader.load(anim, (object: any) => {
+        player.animatations[name] = object.animations[0]
+        loadNextAnim(loader)
+      })
+    } else {
+      const lookAround = player.animatations.lookAround
+      const action = player.mixer?.clipAction(lookAround)
+      action?.play()
+
+      setTimeout(() => setLoading(false), 500)
+    }
+  }
+
   const init = () => {
     createCam()
     createScene()
@@ -136,12 +123,17 @@ const App = () => {
     const loader = new FBXLoader()
 
     loader.load(
-      michelle,
+      FBXAnims.walk,
       (object: any) => {
-        mixer = new THREE.AnimationMixer(object)
+        object.mixer = new THREE.AnimationMixer(object)
+        object.name = 'Character'
 
-        const action = mixer.clipAction(object.animations[0])
-        action.play()
+        // Set player values
+        player.mixer = object.mixer
+        player.root = object.mixer.getRoot()
+        player.object = object
+        player.animatations.walk = object.animations[0]
+        player.name = object.name
 
         object.traverse(function (child: any) {
           if (child.isMesh) {
@@ -151,8 +143,7 @@ const App = () => {
         })
 
         sceneAdd(object)
-
-        setTimeout(() => setLoading(false), 1000)
+        loadNextAnim(loader)
       },
       (event: ProgressEvent<EventTarget>) => console.log('onProgress ->', { event }),
       (error: ErrorEvent) => console.log('error = ', { error }),
@@ -173,7 +164,7 @@ const App = () => {
     frameId = requestAnimationFrame(animate)
 
     const delta = clock.getDelta()
-    if (mixer) mixer.update(delta)
+    if (player.mixer) player.mixer.update(delta)
 
     renderer.render(scene, camera)
   }
