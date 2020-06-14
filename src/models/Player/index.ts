@@ -25,6 +25,7 @@ class Player {
     this.animatations = {
       walk: null,
       lookAround: null,
+      jump: null,
     }
   }
 }

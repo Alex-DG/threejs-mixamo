@@ -15,6 +15,7 @@ import {
 } from './styles'
 
 import Player from './models/Player'
+import Overlay from './components/Overlay'
 
 const App = () => {
   const player = new Player()
@@ -38,7 +39,7 @@ const App = () => {
 
   const sceneAdd = (item: THREE.Object3D) => scene.add(item)
 
-  const createCam = () => {
+  const createCamera = () => {
     camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -115,7 +116,7 @@ const App = () => {
   }
 
   const init = () => {
-    createCam()
+    createCamera()
     createScene()
     createLight()
     createGround()
@@ -149,10 +150,13 @@ const App = () => {
       (error: ErrorEvent) => console.log('error = ', { error }),
     )
 
+    player.action = 'lookAround' // Default action
+
     renderer = new THREE.WebGLRenderer({
       antialias: true,
       canvas: canvasRef.current,
     })
+
     renderer.setPixelRatio(window.devicePixelRatio)
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.shadowMap.enabled = true
@@ -169,10 +173,63 @@ const App = () => {
     renderer.render(scene, camera)
   }
 
+  // IN PROGRESS!!
+  const onPlayerMove = (move: string) => {
+    if (move) {
+      let action = move
+
+      // if (action === player.action) {
+      //   // Default
+      //   action = 'lookAround'
+      // }
+
+      // Set action
+      player.action = action
+
+      // Stop all
+      player.mixer?.stopAllAction()
+
+      // Start new player action
+      const anim: any = player.animatations[action]
+      const playerAction = player.mixer?.clipAction(anim)
+      playerAction?.play()
+    }
+  }
+
+  function setupKeyControls() {
+    let move: string
+
+    document.onkeydown = function (event) {
+      console.log({ event })
+      switch (event.keyCode) {
+        case 37: // left
+          break
+        case 38: // up
+          move = 'walk'
+          break
+        case 39: // right
+          break
+        case 40: // down
+          move = 'lookAround'
+          break
+        case 32: // space
+          move = 'jump'
+          break
+        default:
+          move = 'lookAround'
+      }
+
+      console.log({ move })
+
+      onPlayerMove(move)
+    }
+  }
+
   useEffect(
     () => {
       init()
       animate()
+      setupKeyControls()
 
       return () => {
         cancelAnimationFrame(frameId)
@@ -185,6 +242,7 @@ const App = () => {
 
   return (
     <>
+      <Overlay display={!loading} />
       <StyledCanvas ref={canvasRef} />
       <LoadingWrapper>
         {loading && (
